@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, date
 from sqlalchemy import create_engine, select, and_, update, delete, desc, func, text
 from sqlalchemy.orm import sessionmaker, joinedload
+import pandas as pd
 
 
 class DatabaseClient:
@@ -14,13 +15,11 @@ class DatabaseClient:
         with self.Session() as session:
             try:
                 session.execute(text('SELECT 1'))
-                print('\n\n----------- Connection successful !')
                 return True
             
             except Exception as e:
-                print('\n\n----------- Connection failed ! ERROR : ', e)
                 return False
-
+            
 
     def merge_instances(self, instances: list):
         """Inserts or updates the given fixtures in the database
@@ -50,3 +49,16 @@ class DatabaseClient:
                 raise e
             finally:
                 print(f"Finished updating instances: {instance}")
+
+
+
+    def get_query_as_dataframe(self, query: str):
+        with self.engine.connect() as conn, conn.begin():
+            data = pd.read_sql_query(query,con=conn,index_col='date')
+        return data
+    
+
+    def get_table_as_dataframe(self, sql_table: str):
+        with self.engine.connect() as conn, conn.begin():
+            data = pd.read_sql_table(sql_table, conn, index_col='date')
+        return data
